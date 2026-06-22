@@ -36,10 +36,12 @@ A niche CLI tool to extract text from EPUB files with smart cleaning capabilitie
 - **Nested Chapter Support**: Handles hierarchical chapter structures
 - **URL Support**: Extract text directly from EPUB files hosted online
 
-
 ## Structured extraction for downstream tooling
 
-For downstream tools that need stable source mapping, `epub2text` provides a read-only structured extraction API. It exposes package metadata, spine source documents, navigation entries, text blocks, inline markup runs, entity runs, optional segments, and diagnostics without changing the normal plain-text reader APIs.
+For downstream tools that need stable source mapping, `epub2text` provides a read-only
+structured extraction API. It exposes package metadata, spine source documents,
+navigation entries, text blocks, inline markup runs, entity runs, optional segments, and
+diagnostics without changing the normal plain-text reader APIs.
 
 ```python
 from epub2text import EPUBParser
@@ -49,7 +51,11 @@ extraction = parser.extract_structured(include_segments=True)
 json_payload = extraction.to_json(include_raw=False, indent=2)
 ```
 
-Structured extraction is not an EPUB writer. It does not rebuild EPUB ZIP files, apply translated text, write OPF/NAV/NCX files, or replace XHTML content. See `docs/structured_extraction.rst` for the data model, offset semantics, diagnostics, strict mode, and downstream consumer guidance.
+Structured extraction is not an EPUB writer. It does not rebuild EPUB ZIP files, apply
+translated text, write OPF/NAV/NCX files, or replace XHTML content. See
+`docs/structured_extraction.rst` for the data model, offset semantics, diagnostics,
+strict mode, and downstream consumer guidance.
+
 ## Installation
 
 ```bash

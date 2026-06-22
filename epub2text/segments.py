@@ -4,25 +4,34 @@ from __future__ import annotations
 
 import re
 
-from .structured import SourceRange, TextBlock, TextRun, EntityRun, TextSegment
+from .structured import EntityRun, SourceRange, TextBlock, TextRun, TextSegment
 
 
 def _split_offsets(text: str, mode: str) -> list[tuple[str, int, int]]:
     if not text:
         return []
     try:
-        from phrasplit import split_with_offsets  # type: ignore[import-not-found]
+        from phrasplit import split_with_offsets
 
-        return [(seg.text, seg.start, seg.end) for seg in split_with_offsets(text, mode=mode)]
+        return [
+            (seg.text, seg.start, seg.end)
+            for seg in split_with_offsets(text, mode=mode)
+        ]
     except Exception:
         if mode == "paragraph":
             pattern = re.compile(r"[^\n]+(?:\n(?!\n)[^\n]+)*")
         else:
             pattern = re.compile(r"[^.!?]+[.!?]?\s*", re.S)
-        return [(m.group(0), m.start(), m.end()) for m in pattern.finditer(text) if m.group(0)]
+        return [
+            (m.group(0), m.start(), m.end())
+            for m in pattern.finditer(text)
+            if m.group(0)
+        ]
 
 
-def _ranges_for_segment(block: TextBlock, start: int, end: int) -> tuple[SourceRange, ...]:
+def _ranges_for_segment(
+    block: TextBlock, start: int, end: int
+) -> tuple[SourceRange, ...]:
     ranges: list[SourceRange] = []
     for run in block.runs:
         if not isinstance(run, TextRun | EntityRun):
@@ -35,13 +44,37 @@ def _ranges_for_segment(block: TextBlock, start: int, end: int) -> tuple[SourceR
             continue
         source_start = run.source_char_start + (overlap_start - run_start)
         source_end = run.source_char_start + (overlap_end - run_start)
-        ranges.append(SourceRange(block.document_id, source_start, source_end, getattr(run, "source_byte_start", None), getattr(run, "source_byte_end", None)))
+        ranges.append(
+            SourceRange(
+                block.document_id,
+                source_start,
+                source_end,
+                getattr(run, "source_byte_start", None),
+                getattr(run, "source_byte_end", None),
+            )
+        )
     return tuple(ranges)
 
 
-def extract_segments(blocks: list[TextBlock], mode: str = "sentence") -> list[TextSegment]:
+def extract_segments(
+    blocks: list[TextBlock], mode: str = "sentence"
+) -> list[TextSegment]:
     segments: list[TextSegment] = []
     for block in blocks:
         for index, (text, start, end) in enumerate(_split_offsets(block.text, mode)):
-            segments.append(TextSegment(f"seg:{block.id}:{mode}:{index}:{start}:{end}", block.id, mode, index, text, start, end, _ranges_for_segment(block, start, end), block.chapter_id, block.page_number, []))
+            segments.append(
+                TextSegment(
+                    f"seg:{block.id}:{mode}:{index}:{start}:{end}",
+                    block.id,
+                    mode,
+                    index,
+                    text,
+                    start,
+                    end,
+                    _ranges_for_segment(block, start, end),
+                    block.chapter_id,
+                    block.page_number,
+                    [],
+                )
+            )
     return segments

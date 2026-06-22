@@ -34,7 +34,7 @@ from .structured import (
     TextRun,
     TextSegment,
     extract_epub_structure,
- )
+)
 
 __all__ = [
     "EPUBParser",

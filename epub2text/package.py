@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 import ebooklib  # type: ignore[import-untyped]
-from ebooklib import epub
 
 from .diagnostics import Diagnostic
 from .source import sha256_bytes, source_document_from_item
@@ -41,12 +40,16 @@ def inspect_package(parser: Any) -> EpubPackageInfo:
             getattr(item, "type", None) == ebooklib.ITEM_NAVIGATION
             or "nav" in props
             or href.lower().endswith(("nav.xhtml", "nav.html"))
-            or (raw and b"epub:type=\"toc\"" in raw[:4096])
+            or (raw and b'epub:type="toc"' in raw[:4096])
         ):
             nav_href = href
         if href.lower().endswith(".ncx") or media_type == "application/x-dtbncx+xml":
             ncx_href = href
-        manifest_items.append(EpubManifestItem(getattr(item, "id", href), href, media_type, props, raw_size, digest))
+        manifest_items.append(
+            EpubManifestItem(
+                getattr(item, "id", href), href, media_type, props, raw_size, digest
+            )
+        )
 
     spine: list[EpubSpineItem] = []
     for index, spine_tuple in enumerate(parser.book.spine):
@@ -54,9 +57,21 @@ def inspect_package(parser: Any) -> EpubPackageInfo:
         linear = len(spine_tuple) < 2 or str(spine_tuple[1]).lower() != "no"
         item = parser.book.get_item_with_id(item_id)
         if item is None:
-            diagnostics.append(Diagnostic("warning", "unresolved_href", f"Spine item {item_id} was not found"))
+            diagnostics.append(
+                Diagnostic(
+                    "warning", "unresolved_href", f"Spine item {item_id} was not found"
+                )
+            )
             continue
-        spine.append(EpubSpineItem(item_id, item.get_name(), index, linear, getattr(item, "media_type", None)))
+        spine.append(
+            EpubSpineItem(
+                item_id,
+                item.get_name(),
+                index,
+                linear,
+                getattr(item, "media_type", None),
+            )
+        )
 
     return EpubPackageInfo(
         source_path=str(parser.filepath),
@@ -89,8 +104,19 @@ def get_spine_documents(
         if item is None:
             continue
         props = _item_properties(item)
-        if not include_nav_documents and (getattr(item, "type", None) == ebooklib.ITEM_NAVIGATION or "nav" in props or item.get_name() == inspect_package(parser).nav_href):
+        if not include_nav_documents and (
+            getattr(item, "type", None) == ebooklib.ITEM_NAVIGATION
+            or "nav" in props
+            or item.get_name() == inspect_package(parser).nav_href
+        ):
             continue
         doc_id = f"doc:{index}:{item_id}"
-        docs.append(source_document_from_item(item, spine_index=index, document_id=doc_id, include_byte_offsets=include_byte_offsets))
+        docs.append(
+            source_document_from_item(
+                item,
+                spine_index=index,
+                document_id=doc_id,
+                include_byte_offsets=include_byte_offsets,
+            )
+        )
     return docs

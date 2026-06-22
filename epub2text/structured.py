@@ -3,15 +3,31 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass, fields, is_dataclass
+from dataclasses import dataclass, fields, is_dataclass
 from hashlib import sha1
 from typing import Any, Literal
 
-from .diagnostics import Diagnostic, StrictExtractionError
+from .diagnostics import Diagnostic
 from .models import Metadata
 
 DEFAULT_TEXT_BLOCK_TAGS = frozenset(
-    {"p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "td", "th", "caption", "dt", "dd", "figcaption", "blockquote"}
+    {
+        "p",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "li",
+        "td",
+        "th",
+        "caption",
+        "dt",
+        "dd",
+        "figcaption",
+        "blockquote",
+    }
 )
 DEFAULT_SKIP_TAGS = frozenset({"head", "title", "script", "style", "noscript"})
 SCHEMA_VERSION = "epub2text.structured.v1"
@@ -118,9 +134,12 @@ class TextRun:
     block_text_end: int
 
 
+InlineTagKind = Literal["inline_start", "inline_end", "inline_empty", "opaque_inline"]
+
+
 @dataclass(frozen=True)
 class InlineTagRun:
-    kind: Literal["inline_start", "inline_end", "inline_empty", "opaque_inline"]
+    kind: InlineTagKind
     tag_name: str
     raw: str
     source_char_start: int
@@ -139,6 +158,7 @@ class EntityRun:
     source_char_end: int
     block_text_start: int
     block_text_end: int
+
 
 ContentRun = TextRun | InlineTagRun | EntityRun
 
@@ -190,22 +210,53 @@ def stable_hash(value: str, length: int = 8) -> str:
     return sha1(value.encode("utf-8", errors="surrogatepass")).hexdigest()[:length]
 
 
-def _convert(obj: Any, *, include_raw: bool, include_runs: bool, include_segments: bool) -> Any:
+def _convert(
+    obj: Any, *, include_raw: bool, include_runs: bool, include_segments: bool
+) -> Any:
     if is_dataclass(obj):
         result = {}
         for field in fields(obj):
-            if field.name == "text" and obj.__class__.__name__ == "SourceDocument" and not include_raw:
+            if (
+                field.name == "text"
+                and obj.__class__.__name__ == "SourceDocument"
+                and not include_raw
+            ):
                 continue
-            if field.name == "char_to_byte" and obj.__class__.__name__ == "SourceDocument" and not include_raw:
+            if (
+                field.name == "char_to_byte"
+                and obj.__class__.__name__ == "SourceDocument"
+                and not include_raw
+            ):
                 continue
             if field.name == "runs" and not include_runs:
                 continue
-            result[field.name] = _convert(getattr(obj, field.name), include_raw=include_raw, include_runs=include_runs, include_segments=include_segments)
+            result[field.name] = _convert(
+                getattr(obj, field.name),
+                include_raw=include_raw,
+                include_runs=include_runs,
+                include_segments=include_segments,
+            )
         return result
     if isinstance(obj, list):
-        return [_convert(item, include_raw=include_raw, include_runs=include_runs, include_segments=include_segments) for item in obj]
+        return [
+            _convert(
+                item,
+                include_raw=include_raw,
+                include_runs=include_runs,
+                include_segments=include_segments,
+            )
+            for item in obj
+        ]
     if isinstance(obj, tuple | frozenset):
-        return [_convert(item, include_raw=include_raw, include_runs=include_runs, include_segments=include_segments) for item in obj]
+        return [
+            _convert(
+                item,
+                include_raw=include_raw,
+                include_runs=include_runs,
+                include_segments=include_segments,
+            )
+            for item in obj
+        ]
     return obj
 
 
@@ -220,24 +271,90 @@ class StructuredEpubExtraction:
     segments: list[TextSegment]
     diagnostics: list[Diagnostic]
 
-    def to_dict(self, *, include_raw: bool = False, include_runs: bool = True, include_segments: bool = True) -> dict[str, Any]:
+    def to_dict(
+        self,
+        *,
+        include_raw: bool = False,
+        include_runs: bool = True,
+        include_segments: bool = True,
+    ) -> dict[str, Any]:
         return {
             "schema": SCHEMA_VERSION,
             "source": {"path": self.source_path, "sha256": self.source_sha256},
-            "package": _convert(self.package, include_raw=include_raw, include_runs=include_runs, include_segments=include_segments),
-            "documents": _convert(self.documents, include_raw=include_raw, include_runs=include_runs, include_segments=include_segments),
-            "navigation": _convert(self.navigation, include_raw=include_raw, include_runs=include_runs, include_segments=include_segments),
-            "blocks": _convert(self.blocks, include_raw=include_raw, include_runs=include_runs, include_segments=include_segments),
-            "segments": _convert(self.segments if include_segments else [], include_raw=include_raw, include_runs=include_runs, include_segments=include_segments),
-            "diagnostics": _convert(self.diagnostics, include_raw=include_raw, include_runs=include_runs, include_segments=include_segments),
+            "package": _convert(
+                self.package,
+                include_raw=include_raw,
+                include_runs=include_runs,
+                include_segments=include_segments,
+            ),
+            "documents": _convert(
+                self.documents,
+                include_raw=include_raw,
+                include_runs=include_runs,
+                include_segments=include_segments,
+            ),
+            "navigation": _convert(
+                self.navigation,
+                include_raw=include_raw,
+                include_runs=include_runs,
+                include_segments=include_segments,
+            ),
+            "blocks": _convert(
+                self.blocks,
+                include_raw=include_raw,
+                include_runs=include_runs,
+                include_segments=include_segments,
+            ),
+            "segments": _convert(
+                self.segments if include_segments else [],
+                include_raw=include_raw,
+                include_runs=include_runs,
+                include_segments=include_segments,
+            ),
+            "diagnostics": _convert(
+                self.diagnostics,
+                include_raw=include_raw,
+                include_runs=include_runs,
+                include_segments=include_segments,
+            ),
         }
 
-    def to_json(self, *, include_raw: bool = False, include_runs: bool = True, include_segments: bool = True, indent: int | None = None) -> str:
-        return json.dumps(self.to_dict(include_raw=include_raw, include_runs=include_runs, include_segments=include_segments), ensure_ascii=False, indent=indent, sort_keys=True)
+    def to_json(
+        self,
+        *,
+        include_raw: bool = False,
+        include_runs: bool = True,
+        include_segments: bool = True,
+        indent: int | None = None,
+    ) -> str:
+        return json.dumps(
+            self.to_dict(
+                include_raw=include_raw,
+                include_runs=include_runs,
+                include_segments=include_segments,
+            ),
+            ensure_ascii=False,
+            indent=indent,
+            sort_keys=True,
+        )
 
 
-def extract_epub_structure(filepath: str, *, include_raw_documents: bool = False, include_offsets: bool = True, include_inline_runs: bool = True, include_segments: bool = False, policy: ExtractionPolicy | None = None) -> StructuredEpubExtraction:
+def extract_epub_structure(
+    filepath: str,
+    *,
+    include_raw_documents: bool = False,
+    include_offsets: bool = True,
+    include_inline_runs: bool = True,
+    include_segments: bool = False,
+    policy: ExtractionPolicy | None = None,
+) -> StructuredEpubExtraction:
     from .parser import EPUBParser
 
     parser = EPUBParser(filepath)
-    return parser.extract_structured(policy=policy, include_raw_documents=include_raw_documents, include_offsets=include_offsets, include_inline_runs=include_inline_runs, include_segments=include_segments)
+    return parser.extract_structured(
+        policy=policy,
+        include_raw_documents=include_raw_documents,
+        include_offsets=include_offsets,
+        include_inline_runs=include_inline_runs,
+        include_segments=include_segments,
+    )

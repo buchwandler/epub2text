@@ -16,6 +16,14 @@ from ebooklib import epub
 
 from .cleaner import calculate_text_length, clean_text
 from .models import Chapter, Metadata, Page, PageSource
+from .structured import (
+    EpubPackageInfo,
+    ExtractionPolicy,
+    NavigationEntry,
+    SourceDocument,
+    StructuredEpubExtraction,
+    TextSegment,
+)
 
 logger = logging.getLogger(__name__)
 _PAGE_LIST_ATTR_PATTERN = re.compile(
@@ -1721,7 +1729,7 @@ class EPUBParser:
 
         return page_text
 
-    def inspect_package(self):
+    def inspect_package(self) -> EpubPackageInfo:
         """Return read-only package, manifest, and spine metadata."""
         from .package import inspect_package
 
@@ -1733,7 +1741,7 @@ class EPUBParser:
         include_byte_offsets: bool = True,
         include_non_linear: bool = False,
         include_nav_documents: bool = False,
-    ):
+    ) -> list[SourceDocument]:
         """Return decoded source documents for spine items."""
         from .package import get_spine_documents
 
@@ -1744,7 +1752,7 @@ class EPUBParser:
             include_nav_documents=include_nav_documents,
         )
 
-    def get_navigation(self):
+    def get_navigation(self) -> list[NavigationEntry]:
         """Return structured navigation entries."""
         from .nav import navigation_from_parser
 
@@ -1753,20 +1761,19 @@ class EPUBParser:
     def extract_structured(
         self,
         *,
-        policy=None,
+        policy: ExtractionPolicy | None = None,
         include_raw_documents: bool = False,
         include_offsets: bool = True,
         include_inline_runs: bool = True,
         include_segments: bool = False,
         segment_mode: str = "sentence",
-    ):
+    ) -> StructuredEpubExtraction:
         """Return a structured, loss-aware EPUB extraction model."""
         from .blocks import extract_blocks
         from .diagnostics import StrictExtractionError
         from .package import inspect_package
         from .segments import extract_segments
         from .source import sha256_bytes
-        from .structured import ExtractionPolicy, StructuredEpubExtraction
 
         extraction_policy = policy or ExtractionPolicy()
         documents = self.get_spine_documents(
@@ -1788,7 +1795,9 @@ class EPUBParser:
         diagnostics.extend(package.diagnostics)
         for entry in navigation:
             diagnostics.extend(entry.diagnostics)
-        if extraction_policy.strict_offsets and any(d.severity in {"warning", "error"} for d in diagnostics):
+        if extraction_policy.strict_offsets and any(
+            d.severity in {"warning", "error"} for d in diagnostics
+        ):
             raise StrictExtractionError(diagnostics)
         return StructuredEpubExtraction(
             source_path=str(self.filepath),
@@ -1801,7 +1810,9 @@ class EPUBParser:
             diagnostics=diagnostics,
         )
 
-    def extract_segments(self, mode: str = "sentence", *, policy=None):
+    def extract_segments(
+        self, mode: str = "sentence", *, policy: ExtractionPolicy | None = None
+    ) -> list[TextSegment]:
         """Return structured text segments for the EPUB."""
         return self.extract_structured(
             policy=policy, include_segments=True, segment_mode=mode

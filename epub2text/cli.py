@@ -1578,7 +1578,6 @@ def read(
         sys.exit(1)
 
 
-
 @cli.command(name="inspect-structure")
 @click.argument("filepath", type=click.Path(exists=True, path_type=Path))
 @click.option("--json", "as_json", is_flag=True, help="Emit package inspection as JSON")
@@ -1587,9 +1586,12 @@ def inspect_structure(filepath: Path, as_json: bool) -> None:
     parser = EPUBParser(str(filepath))
     package = parser.inspect_package()
     if as_json:
-        from .structured import StructuredEpubExtraction
         extraction = parser.extract_structured(include_segments=False)
-        console.print(extraction.to_json(include_raw=False, include_runs=False, include_segments=False, indent=2))
+        console.print(
+            extraction.to_json(
+                include_raw=False, include_runs=False, include_segments=False, indent=2
+            )
+        )
     else:
         console.print(f"Source: {package.source_path}")
         console.print(f"Spine items: {len(package.spine)}")
@@ -1598,15 +1600,42 @@ def inspect_structure(filepath: Path, as_json: bool) -> None:
 
 @cli.command(name="extract-structure")
 @click.argument("filepath", type=click.Path(exists=True, path_type=Path))
-@click.option("--output", "output", type=click.Path(path_type=Path), help="Write JSON to this file")
-@click.option("--segments", type=click.Choice(["sentence", "paragraph", "clause"]), default=None, help="Include segments")
-@click.option("--include-runs/--no-runs", default=True, help="Include inline and text runs")
-@click.option("--raw/--no-raw", default=False, help="Include raw decoded source documents")
-def extract_structure(filepath: Path, output: Path | None, segments: str | None, include_runs: bool, raw: bool) -> None:
+@click.option(
+    "--output",
+    "output",
+    type=click.Path(path_type=Path),
+    help="Write JSON to this file",
+)
+@click.option(
+    "--segments",
+    type=click.Choice(["sentence", "paragraph", "clause"]),
+    default=None,
+    help="Include segments",
+)
+@click.option(
+    "--include-runs/--no-runs", default=True, help="Include inline and text runs"
+)
+@click.option(
+    "--raw/--no-raw", default=False, help="Include raw decoded source documents"
+)
+def extract_structure(
+    filepath: Path,
+    output: Path | None,
+    segments: str | None,
+    include_runs: bool,
+    raw: bool,
+) -> None:
     """Extract structured EPUB JSON without modifying the EPUB."""
     parser = EPUBParser(str(filepath))
-    extraction = parser.extract_structured(include_segments=segments is not None, segment_mode=segments or "sentence")
-    data = extraction.to_json(include_raw=raw, include_runs=include_runs, include_segments=segments is not None, indent=2)
+    extraction = parser.extract_structured(
+        include_segments=segments is not None, segment_mode=segments or "sentence"
+    )
+    data = extraction.to_json(
+        include_raw=raw,
+        include_runs=include_runs,
+        include_segments=segments is not None,
+        indent=2,
+    )
     if output:
         output.write_text(data, encoding="utf-8")
     else:
@@ -1615,12 +1644,19 @@ def extract_structure(filepath: Path, output: Path | None, segments: str | None,
 
 @cli.command(name="validate-structure")
 @click.argument("filepath", type=click.Path(exists=True, path_type=Path))
-@click.option("--strict-offsets", is_flag=True, help="Fail on structured extraction warnings and errors")
+@click.option(
+    "--strict-offsets",
+    is_flag=True,
+    help="Fail on structured extraction warnings and errors",
+)
 def validate_structure(filepath: Path, strict_offsets: bool) -> None:
     """Validate structured extraction invariants only."""
     from .structured import ExtractionPolicy
+
     parser = EPUBParser(str(filepath))
-    extraction = parser.extract_structured(policy=ExtractionPolicy(strict_offsets=strict_offsets), include_segments=True)
+    extraction = parser.extract_structured(
+        policy=ExtractionPolicy(strict_offsets=strict_offsets), include_segments=True
+    )
     errors = []
     docs = {doc.document_id: doc for doc in extraction.documents}
     for block in extraction.blocks:
@@ -1631,14 +1667,23 @@ def validate_structure(filepath: Path, strict_offsets: bool) -> None:
         if joined != block.text:
             errors.append(f"run text mismatch: {block.id}")
     for segment in extraction.segments:
-        block = next(block for block in extraction.blocks if block.id == segment.block_id)
-        if block.text[segment.block_text_start:segment.block_text_end] != segment.text:
+        block = next(
+            block for block in extraction.blocks if block.id == segment.block_id
+        )
+        if (
+            block.text[segment.block_text_start : segment.block_text_end]
+            != segment.text
+        ):
             errors.append(f"segment range mismatch: {segment.id}")
     if errors:
         for error in errors:
             console.print(f"[red]{error}[/red]")
         raise click.ClickException(f"{len(errors)} structured invariant(s) failed")
-    console.print(f"[green]Structured extraction valid:[/green] {len(extraction.blocks)} blocks, {len(extraction.segments)} segments")
+    console.print(
+        f"[green]Structured extraction valid:[/green] "
+        f"{len(extraction.blocks)} blocks, {len(extraction.segments)} segments"
+    )
+
 
 def main() -> None:
     """Main entry point for CLI."""

@@ -89,9 +89,6 @@ module = [
     "defusedxml",
     "defusedxml.*",
     "phrasplit",
-    "pypub",
-    "pypub.*",
-    "setuptools",
 ]
 ignore_missing_imports = true
 

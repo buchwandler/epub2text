@@ -10,9 +10,33 @@ from html.parser import HTMLParser
 from typing import Any
 
 from .source import byte_offset
-from .structured import EntityRun, ExtractionPolicy, InlineTagRun, SourceDocument, TextBlock, TextRun, stable_hash
+from .structured import (
+    EntityRun,
+    ExtractionPolicy,
+    InlineTagKind,
+    InlineTagRun,
+    SourceDocument,
+    TextBlock,
+    TextRun,
+    stable_hash,
+)
 
-VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
+VOID_TAGS = {
+    "area",
+    "base",
+    "br",
+    "col",
+    "embed",
+    "hr",
+    "img",
+    "input",
+    "link",
+    "meta",
+    "param",
+    "source",
+    "track",
+    "wbr",
+}
 
 
 @dataclass
@@ -29,17 +53,34 @@ class _OpenBlock:
     def text_len(self) -> int:
         return sum(len(part) for part in self.text_parts)
 
-    def add_text(self, text: str, start: int, end: int, table: list[int] | None) -> None:
+    def add_text(
+        self, text: str, start: int, end: int, table: list[int] | None
+    ) -> None:
         if not text:
             return
         text_start = self.text_len
         self.text_parts.append(text)
-        self.runs.append(TextRun("text", text, start, end, byte_offset(table, start), byte_offset(table, end), text_start, text_start + len(text)))
+        self.runs.append(
+            TextRun(
+                "text",
+                text,
+                start,
+                end,
+                byte_offset(table, start),
+                byte_offset(table, end),
+                text_start,
+                text_start + len(text),
+            )
+        )
 
     def add_entity(self, raw: str, text: str, start: int, end: int) -> None:
         text_start = self.text_len
         self.text_parts.append(text)
-        self.runs.append(EntityRun("entity", raw, text, start, end, text_start, text_start + len(text)))
+        self.runs.append(
+            EntityRun(
+                "entity", raw, text, start, end, text_start, text_start + len(text)
+            )
+        )
 
 
 class OffsetBlockParser(HTMLParser):
@@ -64,7 +105,9 @@ class OffsetBlockParser(HTMLParser):
         line, col = self.getpos()
         return self.line_starts[line - 1] + col
 
-    def _attrs(self, attrs: list[tuple[str, str | None]]) -> tuple[tuple[str, str], ...]:
+    def _attrs(
+        self, attrs: list[tuple[str, str | None]]
+    ) -> tuple[tuple[str, str], ...]:
         return tuple((name, value or "") for name, value in attrs)
 
     def _path(self, tag: str) -> str:
@@ -85,10 +128,29 @@ class OffsetBlockParser(HTMLParser):
         end = start + len(raw)
         attrs_tuple = self._attrs(attrs)
         if self.open_blocks and tag not in self.policy.block_tags:
-            kind = "inline_empty" if tag in VOID_TAGS else "opaque_inline" if tag in self.policy.opaque_inline_tags else "inline_start"
-            self.open_blocks[-1].runs.append(InlineTagRun(kind, tag, raw, start, end, byte_offset(self.document.char_to_byte, start), byte_offset(self.document.char_to_byte, end), attrs_tuple))
+            kind: InlineTagKind = (
+                "inline_empty"
+                if tag in VOID_TAGS
+                else "opaque_inline"
+                if tag in self.policy.opaque_inline_tags
+                else "inline_start"
+            )
+            self.open_blocks[-1].runs.append(
+                InlineTagRun(
+                    kind,
+                    tag,
+                    raw,
+                    start,
+                    end,
+                    byte_offset(self.document.char_to_byte, start),
+                    byte_offset(self.document.char_to_byte, end),
+                    attrs_tuple,
+                )
+            )
         if not self._skipped() and tag in self.policy.block_tags:
-            self.open_blocks.append(_OpenBlock(tag, attrs_tuple, self._path(tag), start, end))
+            self.open_blocks.append(
+                _OpenBlock(tag, attrs_tuple, self._path(tag), start, end)
+            )
         if tag not in VOID_TAGS:
             self.stack.append((tag, start))
 
@@ -99,8 +161,23 @@ class OffsetBlockParser(HTMLParser):
         end = start + len(raw)
         attrs_tuple = self._attrs(attrs)
         if self.open_blocks and tag not in self.policy.block_tags:
-            kind = "opaque_inline" if tag in self.policy.opaque_inline_tags else "inline_empty"
-            self.open_blocks[-1].runs.append(InlineTagRun(kind, tag, raw, start, end, byte_offset(self.document.char_to_byte, start), byte_offset(self.document.char_to_byte, end), attrs_tuple))
+            kind: InlineTagKind = (
+                "opaque_inline"
+                if tag in self.policy.opaque_inline_tags
+                else "inline_empty"
+            )
+            self.open_blocks[-1].runs.append(
+                InlineTagRun(
+                    kind,
+                    tag,
+                    raw,
+                    start,
+                    end,
+                    byte_offset(self.document.char_to_byte, start),
+                    byte_offset(self.document.char_to_byte, end),
+                    attrs_tuple,
+                )
+            )
 
     def handle_endtag(self, tag: str) -> None:
         tag = tag.lower()
@@ -109,18 +186,53 @@ class OffsetBlockParser(HTMLParser):
         raw = raw_match.group(0) if raw_match else f"</{tag}>"
         end = end_start + len(raw)
         if self.open_blocks and tag not in self.policy.block_tags:
-            self.open_blocks[-1].runs.append(InlineTagRun("inline_end", tag, raw, end_start, end, byte_offset(self.document.char_to_byte, end_start), byte_offset(self.document.char_to_byte, end), ()))
+            self.open_blocks[-1].runs.append(
+                InlineTagRun(
+                    "inline_end",
+                    tag,
+                    raw,
+                    end_start,
+                    end,
+                    byte_offset(self.document.char_to_byte, end_start),
+                    byte_offset(self.document.char_to_byte, end),
+                    (),
+                )
+            )
         if self.open_blocks and self.open_blocks[-1].tag == tag:
             block = self.open_blocks.pop()
             text = "".join(block.text_parts)
-            block_id = f"block:{self.document.document_id}:{self.block_counter}:{block.inner_start}:{stable_hash(text)}"
-            self.blocks.append(TextBlock(
-                block_id, self.document.document_id, self.document.href, self.document.spine_index, self.block_counter,
-                block.tag, block.path, block.attrs, block.outer_start, end, block.inner_start, end_start,
-                byte_offset(self.document.char_to_byte, block.outer_start), byte_offset(self.document.char_to_byte, end),
-                byte_offset(self.document.char_to_byte, block.inner_start), byte_offset(self.document.char_to_byte, end_start),
-                text, sha256(text.encode("utf-8", errors="surrogatepass")).hexdigest(), block.runs,
-                None, None, None, "structured-default", []))
+            block_id = (
+                f"block:{self.document.document_id}:{self.block_counter}:"
+                f"{block.inner_start}:{stable_hash(text)}"
+            )
+            self.blocks.append(
+                TextBlock(
+                    block_id,
+                    self.document.document_id,
+                    self.document.href,
+                    self.document.spine_index,
+                    self.block_counter,
+                    block.tag,
+                    block.path,
+                    block.attrs,
+                    block.outer_start,
+                    end,
+                    block.inner_start,
+                    end_start,
+                    byte_offset(self.document.char_to_byte, block.outer_start),
+                    byte_offset(self.document.char_to_byte, end),
+                    byte_offset(self.document.char_to_byte, block.inner_start),
+                    byte_offset(self.document.char_to_byte, end_start),
+                    text,
+                    sha256(text.encode("utf-8", errors="surrogatepass")).hexdigest(),
+                    block.runs,
+                    None,
+                    None,
+                    None,
+                    "structured-default",
+                    [],
+                )
+            )
             self.block_counter += 1
         for i in range(len(self.stack) - 1, -1, -1):
             if self.stack[i][0] == tag:
@@ -130,22 +242,30 @@ class OffsetBlockParser(HTMLParser):
     def handle_data(self, data: str) -> None:
         if self.open_blocks and not self._skipped():
             start = self._offset()
-            self.open_blocks[-1].add_text(data, start, start + len(data), self.document.char_to_byte)
+            self.open_blocks[-1].add_text(
+                data, start, start + len(data), self.document.char_to_byte
+            )
 
     def handle_entityref(self, name: str) -> None:
         if self.open_blocks and not self._skipped():
             start = self._offset()
             raw = f"&{name};"
-            self.open_blocks[-1].add_entity(raw, html.unescape(raw), start, start + len(raw))
+            self.open_blocks[-1].add_entity(
+                raw, html.unescape(raw), start, start + len(raw)
+            )
 
     def handle_charref(self, name: str) -> None:
         if self.open_blocks and not self._skipped():
             start = self._offset()
             raw = f"&#{name};"
-            self.open_blocks[-1].add_entity(raw, html.unescape(raw), start, start + len(raw))
+            self.open_blocks[-1].add_entity(
+                raw, html.unescape(raw), start, start + len(raw)
+            )
 
 
-def extract_blocks(document: SourceDocument, policy: ExtractionPolicy | None = None) -> list[TextBlock]:
+def extract_blocks(
+    document: SourceDocument, policy: ExtractionPolicy | None = None
+) -> list[TextBlock]:
     parser = OffsetBlockParser(document, policy or ExtractionPolicy())
     parser.feed(document.text)
     parser.close()

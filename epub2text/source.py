@@ -9,8 +9,8 @@ from typing import Any
 from .diagnostics import Diagnostic
 from .structured import SourceDocument, stable_hash
 
-_ENCODING_RE = re.compile(br"<\?xml[^>]*encoding=['\"]([^'\"]+)", re.I)
-_META_CHARSET_RE = re.compile(br"<meta[^>]+charset=['\"]?([^\s'\"/>]+)", re.I)
+_ENCODING_RE = re.compile(rb"<\?xml[^>]*encoding=['\"]([^'\"]+)", re.I)
+_META_CHARSET_RE = re.compile(rb"<meta[^>]+charset=['\"]?([^\s'\"/>]+)", re.I)
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -34,7 +34,13 @@ def decode_source(raw: bytes) -> tuple[str, str, list[Diagnostic]]:
     try:
         return raw.decode(encoding), encoding, diagnostics
     except (LookupError, UnicodeDecodeError):
-        diagnostics.append(Diagnostic("warning", "encoding_fallback", f"Could not decode as {encoding}; used utf-8 replacement"))
+        diagnostics.append(
+            Diagnostic(
+                "warning",
+                "encoding_fallback",
+                f"Could not decode as {encoding}; used utf-8 replacement",
+            )
+        )
         return raw.decode("utf-8", errors="replace"), "utf-8", diagnostics
 
 
@@ -51,18 +57,31 @@ def build_char_to_byte(text: str, encoding: str) -> list[int] | None:
 
 
 def byte_offset(table: list[int] | None, char_offset: int | None) -> int | None:
-    if table is None or char_offset is None or char_offset < 0 or char_offset >= len(table):
+    if (
+        table is None
+        or char_offset is None
+        or char_offset < 0
+        or char_offset >= len(table)
+    ):
         return None
     return table[char_offset]
 
 
-def source_document_from_item(item: Any, *, spine_index: int | None, document_id: str | None = None, include_byte_offsets: bool = True) -> SourceDocument:
+def source_document_from_item(
+    item: Any,
+    *,
+    spine_index: int | None,
+    document_id: str | None = None,
+    include_byte_offsets: bool = True,
+) -> SourceDocument:
     raw = item.get_content()
     text, encoding, diagnostics = decode_source(raw)
     char_to_byte = build_char_to_byte(text, encoding) if include_byte_offsets else None
     href = item.get_name()
     return SourceDocument(
-        document_id=document_id or getattr(item, "id", None) or f"doc:{spine_index}:{stable_hash(href)}",
+        document_id=document_id
+        or getattr(item, "id", None)
+        or f"doc:{spine_index}:{stable_hash(href)}",
         href=href,
         spine_index=spine_index,
         media_type=getattr(item, "media_type", None),
@@ -70,7 +89,9 @@ def source_document_from_item(item: Any, *, spine_index: int | None, document_id
         raw_bytes_len=len(raw),
         encoding=encoding,
         text=text,
-        text_sha256=hashlib.sha256(text.encode("utf-8", errors="surrogatepass")).hexdigest(),
+        text_sha256=hashlib.sha256(
+            text.encode("utf-8", errors="surrogatepass")
+        ).hexdigest(),
         char_to_byte=char_to_byte,
         diagnostics=diagnostics,
     )
