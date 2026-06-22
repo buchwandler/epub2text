@@ -1720,3 +1720,89 @@ class EPUBParser:
                 return "\n".join(result_lines)
 
         return page_text
+
+    def inspect_package(self):
+        """Return read-only package, manifest, and spine metadata."""
+        from .package import inspect_package
+
+        return inspect_package(self)
+
+    def get_spine_documents(
+        self,
+        raw: bool = True,
+        include_byte_offsets: bool = True,
+        include_non_linear: bool = False,
+        include_nav_documents: bool = False,
+    ):
+        """Return decoded source documents for spine items."""
+        from .package import get_spine_documents
+
+        return get_spine_documents(
+            self,
+            include_byte_offsets=include_byte_offsets,
+            include_non_linear=include_non_linear,
+            include_nav_documents=include_nav_documents,
+        )
+
+    def get_navigation(self):
+        """Return structured navigation entries."""
+        from .nav import navigation_from_parser
+
+        return navigation_from_parser(self, self.get_spine_documents())
+
+    def extract_structured(
+        self,
+        *,
+        policy=None,
+        include_raw_documents: bool = False,
+        include_offsets: bool = True,
+        include_inline_runs: bool = True,
+        include_segments: bool = False,
+        segment_mode: str = "sentence",
+    ):
+        """Return a structured, loss-aware EPUB extraction model."""
+        from .blocks import extract_blocks
+        from .diagnostics import StrictExtractionError
+        from .package import inspect_package
+        from .segments import extract_segments
+        from .source import sha256_bytes
+        from .structured import ExtractionPolicy, StructuredEpubExtraction
+
+        extraction_policy = policy or ExtractionPolicy()
+        documents = self.get_spine_documents(
+            include_byte_offsets=include_offsets,
+            include_non_linear=extraction_policy.include_non_linear_spine,
+            include_nav_documents=extraction_policy.include_nav_documents,
+        )
+        navigation = self.get_navigation()
+        blocks = []
+        diagnostics = []
+        for document in documents:
+            document_blocks = extract_blocks(document, extraction_policy)
+            blocks.extend(document_blocks)
+            diagnostics.extend(document.diagnostics)
+            for block in document_blocks:
+                diagnostics.extend(block.diagnostics)
+        segments = extract_segments(blocks, segment_mode) if include_segments else []
+        package = inspect_package(self)
+        diagnostics.extend(package.diagnostics)
+        for entry in navigation:
+            diagnostics.extend(entry.diagnostics)
+        if extraction_policy.strict_offsets and any(d.severity in {"warning", "error"} for d in diagnostics):
+            raise StrictExtractionError(diagnostics)
+        return StructuredEpubExtraction(
+            source_path=str(self.filepath),
+            source_sha256=sha256_bytes(self.filepath.read_bytes()),
+            package=package,
+            documents=documents,
+            navigation=navigation,
+            blocks=blocks,
+            segments=segments,
+            diagnostics=diagnostics,
+        )
+
+    def extract_segments(self, mode: str = "sentence", *, policy=None):
+        """Return structured text segments for the EPUB."""
+        return self.extract_structured(
+            policy=policy, include_segments=True, segment_mode=mode
+        ).segments

@@ -19,6 +19,22 @@ from .models import Chapter, Metadata, Page, PageSource
 from .cleaner import clean_text, TextCleaner
 from .bookmarks import Bookmark, BookmarkManager
 from .reader import EpubReader, ReaderState
+from .diagnostics import Diagnostic, StrictExtractionError
+from .structured import (
+    EntityRun,
+    EpubManifestItem,
+    EpubPackageInfo,
+    EpubSpineItem,
+    ExtractionPolicy,
+    InlineTagRun,
+    NavigationEntry,
+    SourceDocument,
+    StructuredEpubExtraction,
+    TextBlock,
+    TextRun,
+    TextSegment,
+    extract_epub_structure,
+ )
 
 __all__ = [
     "EPUBParser",
@@ -33,6 +49,21 @@ __all__ = [
     "BookmarkManager",
     "EpubReader",
     "ReaderState",
+    "Diagnostic",
+    "StrictExtractionError",
+    "ExtractionPolicy",
+    "EpubPackageInfo",
+    "EpubManifestItem",
+    "EpubSpineItem",
+    "SourceDocument",
+    "NavigationEntry",
+    "TextBlock",
+    "TextSegment",
+    "TextRun",
+    "InlineTagRun",
+    "EntityRun",
+    "StructuredEpubExtraction",
+    "extract_epub_structure",
 ]
 
 try:
