@@ -12,12 +12,7 @@ def _split_offsets(text: str, mode: str) -> list[tuple[str, int, int]]:
         return []
     try:
         from phrasplit import split_with_offsets
-
-        return [
-            (seg.text, seg.start, seg.end)
-            for seg in split_with_offsets(text, mode=mode)
-        ]
-    except Exception:
+    except ImportError:
         if mode == "paragraph":
             pattern = re.compile(r"[^\n]+(?:\n(?!\n)[^\n]+)*")
         else:
@@ -30,6 +25,21 @@ def _split_offsets(text: str, mode: str) -> list[tuple[str, int, int]]:
             trimmed = value.rstrip()
             result.append((trimmed, m.start(), m.start() + len(trimmed)))
         return result
+
+    # Structured extraction should be deterministic and must not depend on an
+    # ambient spaCy environment. An installed-but-incomplete spaCy package
+    # without the language model would otherwise make segmentation fail.
+    phrasplit_segments = split_with_offsets(text, mode=mode, use_spacy=False)
+    result: list[tuple[str, int, int]] = []
+    for seg in phrasplit_segments:
+        start = getattr(seg, "char_start", getattr(seg, "start", None))
+        end = getattr(seg, "char_end", getattr(seg, "end", None))
+        if start is None or end is None:
+            raise TypeError(
+                "Unsupported phrasplit segment object: expected char_start/char_end"
+            )
+        result.append((seg.text, start, end))
+    return result
 
 
 def _ranges_for_segment(

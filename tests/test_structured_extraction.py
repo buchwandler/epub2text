@@ -210,7 +210,9 @@ def test_xhtml_fragments_serialize_without_runs(tmp_path):
 
 def test_xhtml_segment_starts_before_inline_and_ends_inside(tmp_path):
     epub_path = tmp_path / "book.epub"
-    make_epub_with_body(epub_path, "<p>Start <em>middle. end</em></p>")
+    # phrasplit needs a second terminated sentence; the original unpunctuated
+    # "end" is grouped with the first sentence and no longer splits.
+    make_epub_with_body(epub_path, "<p>Start <em>middle. The end.</em></p>")
     extraction = EPUBParser(str(epub_path)).extract_structured(
         include_segments=True, include_xhtml_fragments=True
     )
@@ -221,14 +223,18 @@ def test_xhtml_segment_starts_before_inline_and_ends_inside(tmp_path):
 
 def test_xhtml_segment_starts_inside_inline_and_ends_after(tmp_path):
     epub_path = tmp_path / "book.epub"
-    make_epub_with_body(epub_path, "<p><em>Start. middle</em> end.</p>")
+    # phrasplit needs both clauses to be terminated sentences; the original
+    # unpunctuated "middle" is grouped with "end." into one segment.
+    make_epub_with_body(epub_path, "<p>One. <em>Two. three</em> The end.</p>")
     extraction = EPUBParser(str(epub_path)).extract_structured(
         include_segments=True, include_xhtml_fragments=True
     )
     segment = next(
-        segment for segment in extraction.segments if segment.text == "middle end."
+        segment
+        for segment in extraction.segments
+        if segment.text == "Two. three The end."
     )
-    assert segment.xhtml_fragment.xhtml == "<em>middle</em> end."
+    assert segment.xhtml_fragment.xhtml == "<em>Two. three</em> The end."
 
 
 def test_xhtml_void_inline_tags_are_deterministic(tmp_path):
@@ -258,3 +264,36 @@ def test_xhtml_disallowed_tags_produce_diagnostics(tmp_path):
     assert any(
         d.code == "xhtml_fragment_disallowed_tag" for d in extraction.diagnostics
     )
+
+
+def test_xhtml_segments_split_emphasis_sentence_boundaries(tmp_path):
+    epub_path = tmp_path / "book.epub"
+    make_epub_with_body(
+        epub_path,
+        (
+            "<p>He nodded slowly. "
+            "<em>I can’t force her, for all that I need her.</em> "
+            "Perhaps Tisamon would have more luck in persuading her.</p>"
+        ),
+    )
+
+    extraction = EPUBParser(str(epub_path)).extract_structured(
+        include_segments=True,
+        include_xhtml_fragments=True,
+    )
+
+    block = next(block for block in extraction.blocks if block.tag_name == "p")
+    segments = [
+        segment for segment in extraction.segments if segment.block_id == block.id
+    ]
+
+    assert [segment.text for segment in segments] == [
+        "He nodded slowly.",
+        "I can’t force her, for all that I need her.",
+        "Perhaps Tisamon would have more luck in persuading her.",
+    ]
+    assert [segment.xhtml_fragment.xhtml for segment in segments] == [
+        "He nodded slowly.",
+        "<em>I can’t force her, for all that I need her.</em>",
+        "Perhaps Tisamon would have more luck in persuading her.",
+    ]
