@@ -6,6 +6,7 @@ Adapted from abogen's book_handler.py with navigation support.
 import logging
 import re
 import urllib.parse
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -1766,11 +1767,16 @@ class EPUBParser:
         include_offsets: bool = True,
         include_inline_runs: bool = True,
         include_segments: bool = False,
+        include_xhtml_fragments: bool = False,
         segment_mode: str = "sentence",
     ) -> StructuredEpubExtraction:
         """Return a structured, loss-aware EPUB extraction model."""
         from .blocks import extract_blocks
         from .diagnostics import StrictExtractionError
+        from .fragments import (
+            render_block_xhtml_fragment,
+            render_segment_xhtml_fragment,
+        )
         from .package import inspect_package
         from .segments import extract_segments
         from .source import sha256_bytes
@@ -1786,15 +1792,42 @@ class EPUBParser:
         diagnostics = []
         for document in documents:
             document_blocks = extract_blocks(document, extraction_policy)
+            if include_xhtml_fragments:
+                document_blocks = [
+                    replace(
+                        block,
+                        xhtml_fragment=render_block_xhtml_fragment(
+                            block, extraction_policy
+                        ),
+                    )
+                    for block in document_blocks
+                ]
             blocks.extend(document_blocks)
             diagnostics.extend(document.diagnostics)
             for block in document_blocks:
                 diagnostics.extend(block.diagnostics)
         segments = extract_segments(blocks, segment_mode) if include_segments else []
+        if include_xhtml_fragments and include_segments:
+            blocks_by_id = {block.id: block for block in blocks}
+            segments = [
+                replace(
+                    segment,
+                    xhtml_fragment=render_segment_xhtml_fragment(
+                        blocks_by_id[segment.block_id], segment, extraction_policy
+                    ),
+                )
+                for segment in segments
+            ]
         package = inspect_package(self)
         diagnostics.extend(package.diagnostics)
         for entry in navigation:
             diagnostics.extend(entry.diagnostics)
+        for block in blocks:
+            if block.xhtml_fragment is not None:
+                diagnostics.extend(block.xhtml_fragment.diagnostics)
+        for segment in segments:
+            if segment.xhtml_fragment is not None:
+                diagnostics.extend(segment.xhtml_fragment.diagnostics)
         if extraction_policy.strict_offsets and any(
             d.severity in {"warning", "error"} for d in diagnostics
         ):

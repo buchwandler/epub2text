@@ -37,6 +37,7 @@ The structured API uses dataclasses:
 * ``TextRun``, ``InlineTagRun``, and ``EntityRun`` for ordered content runs.
 * ``TextSegment`` for sentence, paragraph, or clause slices.
 * ``Diagnostic`` for loss, fallback, and unresolved-reference reporting.
+* ``XhtmlFragment`` for opt-in sanitized inline XHTML attached to blocks and segments.
 
 Offset semantics
 ----------------
@@ -47,6 +48,31 @@ when a char-to-byte map can be built for the detected encoding. For exact blocks
 ``inner_char_start`` to ``inner_char_end`` slices the inner source. Text-bearing
 runs join to exactly ``TextBlock.text``.
 
+
+XHTML fragments
+---------------
+
+Call ``EPUBParser.extract_structured(include_xhtml_fragments=True)`` or
+``extract_epub_structure(..., include_xhtml_fragments=True)`` to attach
+``xhtml_fragment`` to each ``TextBlock``. When ``include_segments=True`` is also
+set, each ``TextSegment`` receives a fragment for its visible text range.
+Fragments are rendered from structured runs, not by serializing BeautifulSoup.
+They preserve allowed inline tags such as ``em``, ``strong``, ``span``, ``a``,
+``code``, ``br``, and ``wbr`` while omitting block tags, scripts, and event
+handlers. ``XhtmlFragment.text`` is the represented visible text and should match
+the visible text of ``XhtmlFragment.xhtml``.
+
+The default policy keeps global safe attributes such as ``class``, ``id``,
+``lang``, ``xml:lang``, ``dir``, ``title``, and ``epub:type``. Links may also
+keep ``href``. Disallowed tags or attributes produce diagnostics such as
+``xhtml_fragment_disallowed_tag`` and ``xhtml_fragment_disallowed_attr``.
+Unbalanced inline markup, opaque inline preservation, and visible-text mismatches
+use stable fragment diagnostic codes. ``strict_offsets=True`` fails closed on
+warning or error diagnostics, including fragment diagnostics.
+
+JSON export omits ``xhtml_fragment`` by default, even if fragments were generated.
+Pass ``include_xhtml_fragments=True`` to ``to_dict()`` or ``to_json()`` to include
+generated fragments. This keeps the default payload compatible and compact.
 Diagnostics and strict mode
 ---------------------------
 

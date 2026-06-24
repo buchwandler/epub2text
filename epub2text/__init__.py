@@ -33,6 +33,7 @@ from .structured import (
     TextBlock,
     TextRun,
     TextSegment,
+    XhtmlFragment,
     extract_epub_structure,
 )
 
@@ -62,6 +63,7 @@ __all__ = [
     "TextRun",
     "InlineTagRun",
     "EntityRun",
+    "XhtmlFragment",
     "StructuredEpubExtraction",
     "extract_epub_structure",
 ]

@@ -30,6 +30,47 @@ DEFAULT_TEXT_BLOCK_TAGS = frozenset(
     }
 )
 DEFAULT_SKIP_TAGS = frozenset({"head", "title", "script", "style", "noscript"})
+DEFAULT_ALLOWED_INLINE_FRAGMENT_TAGS = frozenset(
+    {
+        "a",
+        "abbr",
+        "b",
+        "bdi",
+        "bdo",
+        "br",
+        "cite",
+        "code",
+        "data",
+        "dfn",
+        "em",
+        "i",
+        "kbd",
+        "mark",
+        "q",
+        "rp",
+        "rt",
+        "ruby",
+        "s",
+        "samp",
+        "small",
+        "span",
+        "strong",
+        "sub",
+        "sup",
+        "time",
+        "u",
+        "var",
+        "wbr",
+    }
+)
+DEFAULT_ALLOWED_INLINE_FRAGMENT_ATTRS = (
+    ("*", frozenset({"class", "id", "lang", "xml:lang", "dir", "title", "epub:type"})),
+    ("a", frozenset({"href"})),
+    (
+        "span",
+        frozenset({"class", "id", "lang", "xml:lang", "dir", "title", "epub:type"}),
+    ),
+)
 SCHEMA_VERSION = "epub2text.structured.v1"
 
 
@@ -45,6 +86,10 @@ class ExtractionPolicy:
     include_nav_documents: bool = False
     include_non_linear_spine: bool = False
     strict_offsets: bool = False
+    allowed_inline_fragment_tags: frozenset[str] = DEFAULT_ALLOWED_INLINE_FRAGMENT_TAGS
+    allowed_inline_fragment_attrs: tuple[tuple[str, frozenset[str]], ...] = (
+        DEFAULT_ALLOWED_INLINE_FRAGMENT_ATTRS
+    )
 
 
 @dataclass(frozen=True)
@@ -147,6 +192,8 @@ class InlineTagRun:
     source_byte_start: int | None
     source_byte_end: int | None
     attrs: tuple[tuple[str, str], ...]
+    block_text_start: int | None = None
+    block_text_end: int | None = None
 
 
 @dataclass(frozen=True)
@@ -161,6 +208,16 @@ class EntityRun:
 
 
 ContentRun = TextRun | InlineTagRun | EntityRun
+
+
+@dataclass(frozen=True)
+class XhtmlFragment:
+    text: str
+    xhtml: str
+    tag_skeleton: tuple[str, ...]
+    source_char_start: int | None
+    source_char_end: int | None
+    diagnostics: list[Diagnostic]
 
 
 @dataclass(frozen=True)
@@ -189,6 +246,7 @@ class TextBlock:
     page_number: str | None
     extraction_policy: str
     diagnostics: list[Diagnostic]
+    xhtml_fragment: XhtmlFragment | None = None
 
 
 @dataclass(frozen=True)
@@ -204,6 +262,7 @@ class TextSegment:
     chapter_id: str | None
     page_number: str | None
     diagnostics: list[Diagnostic]
+    xhtml_fragment: XhtmlFragment | None = None
 
 
 def stable_hash(value: str, length: int = 8) -> str:
@@ -211,7 +270,12 @@ def stable_hash(value: str, length: int = 8) -> str:
 
 
 def _convert(
-    obj: Any, *, include_raw: bool, include_runs: bool, include_segments: bool
+    obj: Any,
+    *,
+    include_raw: bool,
+    include_runs: bool,
+    include_segments: bool,
+    include_xhtml_fragments: bool,
 ) -> Any:
     if is_dataclass(obj):
         result = {}
@@ -230,11 +294,16 @@ def _convert(
                 continue
             if field.name == "runs" and not include_runs:
                 continue
+            if field.name == "xhtml_fragment" and (
+                not include_xhtml_fragments or getattr(obj, field.name) is None
+            ):
+                continue
             result[field.name] = _convert(
                 getattr(obj, field.name),
                 include_raw=include_raw,
                 include_runs=include_runs,
                 include_segments=include_segments,
+                include_xhtml_fragments=include_xhtml_fragments,
             )
         return result
     if isinstance(obj, list):
@@ -244,6 +313,7 @@ def _convert(
                 include_raw=include_raw,
                 include_runs=include_runs,
                 include_segments=include_segments,
+                include_xhtml_fragments=include_xhtml_fragments,
             )
             for item in obj
         ]
@@ -254,6 +324,7 @@ def _convert(
                 include_raw=include_raw,
                 include_runs=include_runs,
                 include_segments=include_segments,
+                include_xhtml_fragments=include_xhtml_fragments,
             )
             for item in obj
         ]
@@ -277,6 +348,7 @@ class StructuredEpubExtraction:
         include_raw: bool = False,
         include_runs: bool = True,
         include_segments: bool = True,
+        include_xhtml_fragments: bool = False,
     ) -> dict[str, Any]:
         return {
             "schema": SCHEMA_VERSION,
@@ -286,36 +358,42 @@ class StructuredEpubExtraction:
                 include_raw=include_raw,
                 include_runs=include_runs,
                 include_segments=include_segments,
+                include_xhtml_fragments=include_xhtml_fragments,
             ),
             "documents": _convert(
                 self.documents,
                 include_raw=include_raw,
                 include_runs=include_runs,
                 include_segments=include_segments,
+                include_xhtml_fragments=include_xhtml_fragments,
             ),
             "navigation": _convert(
                 self.navigation,
                 include_raw=include_raw,
                 include_runs=include_runs,
                 include_segments=include_segments,
+                include_xhtml_fragments=include_xhtml_fragments,
             ),
             "blocks": _convert(
                 self.blocks,
                 include_raw=include_raw,
                 include_runs=include_runs,
                 include_segments=include_segments,
+                include_xhtml_fragments=include_xhtml_fragments,
             ),
             "segments": _convert(
                 self.segments if include_segments else [],
                 include_raw=include_raw,
                 include_runs=include_runs,
                 include_segments=include_segments,
+                include_xhtml_fragments=include_xhtml_fragments,
             ),
             "diagnostics": _convert(
                 self.diagnostics,
                 include_raw=include_raw,
                 include_runs=include_runs,
                 include_segments=include_segments,
+                include_xhtml_fragments=include_xhtml_fragments,
             ),
         }
 
@@ -325,6 +403,7 @@ class StructuredEpubExtraction:
         include_raw: bool = False,
         include_runs: bool = True,
         include_segments: bool = True,
+        include_xhtml_fragments: bool = False,
         indent: int | None = None,
     ) -> str:
         return json.dumps(
@@ -332,6 +411,7 @@ class StructuredEpubExtraction:
                 include_raw=include_raw,
                 include_runs=include_runs,
                 include_segments=include_segments,
+                include_xhtml_fragments=include_xhtml_fragments,
             ),
             ensure_ascii=False,
             indent=indent,
@@ -346,6 +426,7 @@ def extract_epub_structure(
     include_offsets: bool = True,
     include_inline_runs: bool = True,
     include_segments: bool = False,
+    include_xhtml_fragments: bool = False,
     policy: ExtractionPolicy | None = None,
 ) -> StructuredEpubExtraction:
     from .parser import EPUBParser
@@ -357,4 +438,5 @@ def extract_epub_structure(
         include_offsets=include_offsets,
         include_inline_runs=include_inline_runs,
         include_segments=include_segments,
+        include_xhtml_fragments=include_xhtml_fragments,
     )

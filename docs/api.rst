@@ -45,6 +45,49 @@ Metadata
    :members:
    :undoc-members:
 
+
+Structured extraction
+---------------------
+
+StructuredEpubExtraction
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: epub2text.StructuredEpubExtraction
+   :members:
+   :undoc-members:
+
+TextBlock
+~~~~~~~~~
+
+.. autoclass:: epub2text.TextBlock
+   :members:
+   :undoc-members:
+
+TextSegment
+~~~~~~~~~~~
+
+.. autoclass:: epub2text.TextSegment
+   :members:
+   :undoc-members:
+
+XhtmlFragment
+~~~~~~~~~~~~~
+
+.. autoclass:: epub2text.XhtmlFragment
+   :members:
+   :undoc-members:
+
+ExtractionPolicy
+~~~~~~~~~~~~~~~~
+
+.. autoclass:: epub2text.ExtractionPolicy
+   :members:
+   :undoc-members:
+
+extract_epub_structure
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: epub2text.extract_epub_structure
 Bookmarks
 ---------
 

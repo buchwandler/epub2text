@@ -22,11 +22,14 @@ def _split_offsets(text: str, mode: str) -> list[tuple[str, int, int]]:
             pattern = re.compile(r"[^\n]+(?:\n(?!\n)[^\n]+)*")
         else:
             pattern = re.compile(r"[^.!?]+[.!?]?\s*", re.S)
-        return [
-            (m.group(0), m.start(), m.end())
-            for m in pattern.finditer(text)
-            if m.group(0)
-        ]
+        result = []
+        for m in pattern.finditer(text):
+            value = m.group(0)
+            if not value:
+                continue
+            trimmed = value.rstrip()
+            result.append((trimmed, m.start(), m.start() + len(trimmed)))
+        return result
 
 
 def _ranges_for_segment(

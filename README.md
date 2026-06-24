@@ -56,6 +56,11 @@ translated text, write OPF/NAV/NCX files, or replace XHTML content. See
 `docs/structured_extraction.rst` for the data model, offset semantics, diagnostics,
 strict mode, and downstream consumer guidance.
 
+Set `include_xhtml_fragments=True` on `extract_structured()` or
+`extract_epub_structure()` to attach sanitized inline XHTML fragments to blocks, and to
+segments when `include_segments=True`. Fragment output is opt-in and `to_json()` omits
+`xhtml_fragment` unless `include_xhtml_fragments=True` is passed.
+
 ## Installation
 
 ```bash

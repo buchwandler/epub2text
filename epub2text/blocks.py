@@ -145,6 +145,8 @@ class OffsetBlockParser(HTMLParser):
                     byte_offset(self.document.char_to_byte, start),
                     byte_offset(self.document.char_to_byte, end),
                     attrs_tuple,
+                    self.open_blocks[-1].text_len,
+                    self.open_blocks[-1].text_len,
                 )
             )
         if not self._skipped() and tag in self.policy.block_tags:
@@ -176,6 +178,8 @@ class OffsetBlockParser(HTMLParser):
                     byte_offset(self.document.char_to_byte, start),
                     byte_offset(self.document.char_to_byte, end),
                     attrs_tuple,
+                    self.open_blocks[-1].text_len,
+                    self.open_blocks[-1].text_len,
                 )
             )
 
@@ -196,6 +200,8 @@ class OffsetBlockParser(HTMLParser):
                     byte_offset(self.document.char_to_byte, end_start),
                     byte_offset(self.document.char_to_byte, end),
                     (),
+                    self.open_blocks[-1].text_len,
+                    self.open_blocks[-1].text_len,
                 )
             )
         if self.open_blocks and self.open_blocks[-1].tag == tag:
