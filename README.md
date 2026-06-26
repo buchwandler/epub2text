@@ -109,7 +109,7 @@ Note: Sentence formatting uses the `phrasplit` library which depends on spaCy.
 ### Development Installation
 
 ```bash
-git clone https://github.com/holgern/epub2text
+git clone https://github.com/buchwandler/epub2text
 cd epub2text
 pip install -e .
 ```

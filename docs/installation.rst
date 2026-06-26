@@ -44,7 +44,7 @@ Development Installation
 
 Clone the repository and install in development mode::
 
-    git clone https://github.com/holgern/epub2text
+    git clone https://github.com/buchwandler/epub2text
     cd epub2text
     pip install -e ".[dev]"
 

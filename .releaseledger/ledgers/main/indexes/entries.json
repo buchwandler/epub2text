@@ -7,20 +7,6 @@
     "kind": "added",
     "order": 1,
     "record_revision": 1,
-    "release_version": "v0.2.6",
-    "scopes": [],
-    "source_refs": [],
-    "status": "accepted",
-    "summary": "Sanitized inline XHTML element output in structured extraction with configurable tag preservation"
-  },
-  {
-    "audience": null,
-    "breaking": false,
-    "entry_id": "entry-0001",
-    "internal": false,
-    "kind": "added",
-    "order": 1,
-    "record_revision": 1,
     "release_version": "v0.1.0",
     "scopes": [],
     "source_refs": [],
@@ -114,16 +100,16 @@
   {
     "audience": null,
     "breaking": false,
-    "entry_id": "entry-0002",
+    "entry_id": "entry-0001",
     "internal": false,
     "kind": "added",
-    "order": 2,
+    "order": 1,
     "record_revision": 1,
     "release_version": "v0.2.6",
     "scopes": [],
     "source_refs": [],
     "status": "accepted",
-    "summary": "TextFragment model for fine-grained content representation with entity and inline tag runs"
+    "summary": "Sanitized inline XHTML element output in structured extraction with configurable tag preservation"
   },
   {
     "audience": null,
@@ -198,16 +184,16 @@
   {
     "audience": null,
     "breaking": false,
-    "entry_id": "entry-0003",
+    "entry_id": "entry-0002",
     "internal": false,
-    "kind": "quality",
-    "order": 3,
+    "kind": "added",
+    "order": 2,
     "record_revision": 1,
     "release_version": "v0.2.6",
     "scopes": [],
     "source_refs": [],
     "status": "accepted",
-    "summary": "Extended test coverage for segment extraction with XHTML elements and structured output"
+    "summary": "TextFragment model for fine-grained content representation with entity and inline tag runs"
   },
   {
     "audience": null,
@@ -282,6 +268,20 @@
   {
     "audience": null,
     "breaking": false,
+    "entry_id": "entry-0003",
+    "internal": false,
+    "kind": "quality",
+    "order": 3,
+    "record_revision": 1,
+    "release_version": "v0.2.6",
+    "scopes": [],
+    "source_refs": [],
+    "status": "accepted",
+    "summary": "Extended test coverage for segment extraction with XHTML elements and structured output"
+  },
+  {
+    "audience": null,
+    "breaking": false,
     "entry_id": "entry-0004",
     "internal": false,
     "kind": "added",
@@ -348,6 +348,20 @@
     "source_refs": [],
     "status": "accepted",
     "summary": "ExtractionPolicy configuration for block tags, skip tags, and opaque inline tag handling"
+  },
+  {
+    "audience": null,
+    "breaking": false,
+    "entry_id": "entry-0004",
+    "internal": false,
+    "kind": "added",
+    "order": 4,
+    "record_revision": 1,
+    "release_version": "v0.2.6",
+    "scopes": [],
+    "source_refs": [],
+    "status": "accepted",
+    "summary": "Markdown fragment translation from inline XHTML for structured extraction output with configurable flavor (CommonMark, GFM)"
   },
   {
     "audience": null,

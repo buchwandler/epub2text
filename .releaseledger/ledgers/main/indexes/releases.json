@@ -3,20 +3,6 @@
     "artifact_count": 0,
     "boundary_ref": null,
     "changelog_file": null,
-    "entry_count": 3,
-    "previous_version": "v0.2.5",
-    "record_revision": 4,
-    "released_at": null,
-    "source_count": null,
-    "source_refs": [],
-    "status": "planned",
-    "title": "Inline XHTML Element Support",
-    "version": "v0.2.6"
-  },
-  {
-    "artifact_count": 0,
-    "boundary_ref": null,
-    "changelog_file": null,
     "entry_count": 5,
     "previous_version": null,
     "record_revision": 7,
@@ -110,5 +96,19 @@
     "status": "released",
     "title": "Structured Extraction",
     "version": "v0.2.5"
+  },
+  {
+    "artifact_count": 0,
+    "boundary_ref": null,
+    "changelog_file": null,
+    "entry_count": 4,
+    "previous_version": "v0.2.5",
+    "record_revision": 6,
+    "released_at": "2026-06-26",
+    "source_count": null,
+    "source_refs": [],
+    "status": "released",
+    "title": "Inline XHTML Element Support",
+    "version": "v0.2.6"
   }
 ]
