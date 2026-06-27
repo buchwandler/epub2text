@@ -53,7 +53,7 @@ json_payload = extraction.to_json(include_raw=False, indent=2)
 
 Structured extraction is not an EPUB writer. It does not rebuild EPUB ZIP files, apply
 translated text, write OPF/NAV/NCX files, or replace XHTML content. See
-`docs/structured_extraction.rst` for the data model, offset semantics, diagnostics,
+`docs/structured_extraction.md` for the data model, offset semantics, diagnostics,
 strict mode, and downstream consumer guidance.
 
 Set `include_xhtml_fragments=True` on `extract_structured()` or

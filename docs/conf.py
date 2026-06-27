@@ -22,6 +22,7 @@ author = "Holger Nahrstaedt"
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    "myst_parser",
     "sphinx.ext.autodoc",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
@@ -60,6 +61,16 @@ templates_path = ["_templates"]
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+
+# MyST Markdown support
+source_suffix = {
+    ".md": "markdown",
+}
+
+root_doc = "index"
+
+# MyST options
+myst_heading_anchors = 3
 
 
 # -- Options for HTML output -------------------------------------------------

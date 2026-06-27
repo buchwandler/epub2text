@@ -35,7 +35,7 @@ class SlowHandler(QuietHandler):
 @contextmanager
 def serve_directory(
     directory: Path, handler_cls: type[SimpleHTTPRequestHandler] = QuietHandler
-) -> Generator[str, None, None]:
+) -> Generator[str]:
     handler = partial(handler_cls, directory=str(directory))
     server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)

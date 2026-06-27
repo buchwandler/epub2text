@@ -1,21 +1,21 @@
-epub2text Documentation
-=======================
+# epub2text Documentation
 
 A niche CLI tool to extract text from EPUB files with smart cleaning capabilities.
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+```{toctree}
+:maxdepth: 2
+:caption: Contents:
 
-   installation
-   usage
-   api
-   changelog
+installation
+usage
+api
+changelog
+```
 
-Features
---------
+## Features
 
-- **Smart Navigation Parsing**: Supports both EPUB3 (NAV HTML) and EPUB2 (NCX) navigation formats
+- **Smart Navigation Parsing**: Supports both EPUB3 (NAV HTML) and EPUB2 (NCX)
+  navigation formats
 - **Multiple Extraction Modes**:
   - Chapter-based extraction with selective range support
   - Page-based extraction (using EPUB page-list or synthetic pages)
@@ -30,7 +30,7 @@ Features
   - One clause per line (split at commas, semicolons)
   - Automatic line splitting at clause boundaries for long lines
 - **Smart Text Cleaning**:
-  - Remove bracketed footnotes (``[1]``, ``[42]``)
+  - Remove bracketed footnotes (`[1]`, `[42]`)
   - Remove page numbers (standalone, at line ends, with dashes)
   - Normalize whitespace and paragraph breaks
   - Preserve ordered lists with proper numbering
@@ -41,40 +41,52 @@ Features
 - **Full Dublin Core Metadata**: Extract all EPUB metadata fields
 - **URL Support**: Extract text directly from EPUB files hosted online
 
-Quick Start
------------
+## Quick Start
 
-Install epub2text::
+Install epub2text:
 
-    pip install epub2text
+```bash
+pip install epub2text
+```
 
-Extract text from an EPUB file::
+Extract text from an EPUB file:
 
-    epub2text extract book.epub
+```bash
+epub2text extract book.epub
+```
 
-Extract by pages::
+Extract by pages:
 
-    epub2text extract-pages book.epub
+```bash
+epub2text extract-pages book.epub
+```
 
-List chapters::
+List chapters:
 
-    epub2text list book.epub
+```bash
+epub2text list book.epub
+```
 
-List pages::
+List pages:
 
-    epub2text pages book.epub
+```bash
+epub2text pages book.epub
+```
 
-Read interactively::
+Read interactively:
 
-    epub2text read book.epub
+```bash
+epub2text read book.epub
+```
 
-Show metadata::
+Show metadata:
 
-    epub2text info book.epub
+```bash
+epub2text info book.epub
+```
 
-Indices and tables
-==================
+# Indices and tables
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+- {ref}`genindex`
+- {ref}`modindex`
+- {ref}`search`
