@@ -149,16 +149,14 @@ def format_clauses(
 
     Requires phrasplit to be installed.
 
-    Args:
-        text: Input text with paragraph breaks
-        separator: String to prepend at paragraph boundaries (default: "  ")
-        language_model: spaCy language model to use
-
-    Returns:
-        Text with one clause per line, separator at paragraph boundaries.
+    :param text: Input text with paragraph breaks.
+    :param separator: String to prepend at paragraph boundaries. Default is two spaces.
+    :param language_model: spaCy language model to use.
+    :returns: Text with one clause per line, separator at paragraph boundaries.
         Chapter titles are preserved.
 
-    Example:
+    Example::
+
         Input: "I do like coffee, and I like wine."
         Output:
             "I do like coffee,

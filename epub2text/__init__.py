@@ -191,21 +191,19 @@ def epub2txt(
     """
     Extract text from EPUB file (compatibility function for old epub2txt API).
 
-    Args:
-        filepath: Path to EPUB file or URL
-        outputlist: If True, return list of chapter texts; if False,
-            return single string
-        clean: If True, apply text cleaning; if False, minimal processing
-        timeout: Connection/read timeout for URL downloads (seconds)
-        max_bytes: Maximum allowed download size for URLs
-        user_agent: Optional User-Agent header for URL downloads
-        allowed_schemes: Allowed URL schemes for downloads
+    :param filepath: Path to EPUB file or URL.
+    :param outputlist: If True, return list of chapter texts. If False, return a
+        single string.
+    :param clean: If True, apply text cleaning. If False, use minimal processing.
+    :param timeout: Connection/read timeout for URL downloads, in seconds.
+    :param max_bytes: Maximum allowed download size for URLs.
+    :param user_agent: Optional User-Agent header for URL downloads.
+    :param allowed_schemes: Allowed URL schemes for downloads.
+    :returns: Either a single string of all text when ``outputlist`` is False, or
+        list of chapter texts when ``outputlist`` is True.
 
-    Returns:
-        Either a single string of all text (outputlist=False) or list of
-        chapter texts (outputlist=True)
+    Examples::
 
-    Examples:
         >>> text = epub2txt("book.epub")
         >>> chapters = epub2txt("book.epub", outputlist=True)
         >>> raw_text = epub2txt("book.epub", clean=False)

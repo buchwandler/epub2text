@@ -855,16 +855,13 @@ class EPUBParser:
         """
         Extract text from selected chapters.
 
-        Args:
-            chapter_ids: List of chapter IDs to extract. If None, extract all.
-            deduplicate_chapter_titles: If True, removes duplicate chapter titles
-                that appear as the first line of chapter content (default: True)
-            skip_toc: If True, skip TOC and front matter chapters (default: False)
-            include_chapter_title: If True, includes chapter titles in the output
-                (default: False)
-
-        Returns:
-            Combined text from all selected chapters with chapter titles separated
+        :param chapter_ids: List of chapter IDs to extract. If None, extract all.
+        :param deduplicate_chapter_titles: If True, removes duplicate chapter titles
+            that appear as the first line of chapter content. Default is True.
+        :param skip_toc: If True, skip TOC and front matter chapters. Default is False.
+        :param include_chapter_title: If True, includes chapter titles in the output.
+            Default is False.
+        :returns: Combined text from all selected chapters with chapter titles separated
             by 4 linebreaks before the title and 2 linebreaks after.
         """
         chapters = self.get_chapters()
@@ -928,13 +925,10 @@ class EPUBParser:
         First attempts to use EPUB page-list navigation (original print pages).
         If no page-list is found, generates synthetic pages based on content.
 
-        Args:
-            synthetic_page_size: Size of synthetic pages in characters (default: 2000)
-                                 or words if use_words=True (default: ~350 words)
-            use_words: If True, synthetic_page_size is interpreted as word count
-
-        Returns:
-            List of Page objects
+        :param synthetic_page_size: Size of synthetic pages in characters, or words
+            if ``use_words`` is True. Default is 2000 characters or about 350 words.
+        :param use_words: If True, ``synthetic_page_size`` is interpreted as word count.
+        :returns: List of Page objects.
         """
         # Try to get pages from EPUB page-list first
         pages = self._get_epub_page_list()
@@ -1507,14 +1501,12 @@ class EPUBParser:
         """
         Extract text from selected pages.
 
-        Args:
-            page_numbers: List of page numbers to extract. If None, extract all.
-            deduplicate_chapter_titles: If True, removes duplicate chapter titles
-                that appear as the first line of page content (default: True)
-            skip_toc: If True, skip pages from TOC/Introduction chapter (default: False)
-
-        Returns:
-            Combined text from all selected pages with chapter titles separated
+        :param page_numbers: List of page numbers to extract. If None, extract all.
+        :param deduplicate_chapter_titles: If True, removes duplicate chapter titles
+            that appear as the first line of page content. Default is True.
+        :param skip_toc: If True, skip pages from TOC/Introduction chapter.
+            Default is False.
+        :returns: Combined text from all selected pages with chapter titles separated
             by 4 linebreaks before the title and 2 linebreaks after.
         """
         pages = self.get_pages()

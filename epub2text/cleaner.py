@@ -67,15 +67,13 @@ class TextCleaner:
     ):
         """Initialize text cleaner with options.
 
-        Args:
-            remove_page_numbers: Remove standalone and end-of-line page
-                numbers
-            remove_footnotes: Remove bracketed footnote markers like [1]
-            replace_single_newlines: Replace single newlines with spaces
-                (preserve paragraphs)
-            normalize_whitespace: Collapse multiple spaces to single space
-            preserve_single_newlines: Keep single newlines as paragraph
-                separators (overrides replace_single_newlines)
+        :param remove_page_numbers: Remove standalone and end-of-line page numbers.
+        :param remove_footnotes: Remove bracketed footnote markers like ``[1]``.
+        :param replace_single_newlines: Replace single newlines with spaces
+            while preserving paragraphs.
+        :param normalize_whitespace: Collapse multiple spaces to a single space.
+        :param preserve_single_newlines: Keep single newlines as paragraph separators.
+            This overrides ``replace_single_newlines``.
         """
         self.remove_page_numbers = remove_page_numbers
         self.remove_footnotes = remove_footnotes
